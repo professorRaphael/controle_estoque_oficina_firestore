@@ -4,6 +4,7 @@
 **Cursos:** Sistemas de Informação, Ciência da Computação e Análise e Desenvolvimento de Sistemas  
 **Tecnologias:** React Native, Expo, TypeScript, Firebase Authentication e Cloud Firestore  
 **Natureza:** Projeto didático — **não** é um sistema comercial pronto.
+**Autor:** Raphael Mauricio Sanches de Jesus.
 
 ## 1. Contexto e objetivo
 
