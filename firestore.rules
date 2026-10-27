@@ -1,0 +1,52 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function autenticado() { return request.auth != null; }
+    function camposProdutoValidos() {
+      return request.resource.data.keys().hasAll(['nome', 'quantidade', 'minimo', 'atualizadoEm'])
+        && request.resource.data.keys().hasOnly(['nome', 'quantidade', 'minimo', 'atualizadoEm'])
+        && request.resource.data.nome is string
+        && request.resource.data.nome.size() >= 2
+        && request.resource.data.nome.size() <= 70
+        && request.resource.data.quantidade is int
+        && request.resource.data.quantidade >= 0
+        && request.resource.data.quantidade <= 100000
+        && request.resource.data.minimo is int
+        && request.resource.data.minimo >= 0
+        && request.resource.data.minimo <= 100000
+        && request.resource.data.atualizadoEm == request.time;
+    }
+    match /produtos/{produtoId} {
+      allow read: if autenticado();
+      allow create: if autenticado() && camposProdutoValidos()
+        && request.resource.data.quantidade == 0;
+      allow update: if autenticado() && camposProdutoValidos()
+        && request.resource.data.nome == resource.data.nome
+        && request.resource.data.minimo == resource.data.minimo
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['quantidade', 'atualizadoEm']);
+      allow delete: if false;
+    }
+    match /movimentacoes/{movimentoId} {
+      allow read: if autenticado();
+      allow create: if autenticado()
+        && request.resource.data.keys().hasAll([
+          'produtoId', 'produtoNome', 'tipo', 'quantidade', 'saldoApos', 'usuario', 'quando'
+        ])
+        && request.resource.data.keys().hasOnly([
+          'produtoId', 'produtoNome', 'tipo', 'quantidade', 'saldoApos', 'usuario', 'quando'
+        ])
+        && request.resource.data.usuario == request.auth.uid
+        && request.resource.data.produtoId is string
+        && request.resource.data.produtoNome is string
+        && request.resource.data.tipo in ['entrada', 'saida']
+        && request.resource.data.quantidade == 1
+        && request.resource.data.saldoApos is int
+        && request.resource.data.saldoApos >= 0
+        && request.resource.data.saldoApos <= 100000
+        && request.resource.data.quando == request.time;
+      allow update, delete: if false;
+    }
+    match /{document=**} { allow read, write: if false; }
+  }
+}
